@@ -5,7 +5,7 @@ title: GWAS Peak Finder Batch
 
 # GWAS Peak Finder Batch
 
-`peak_finder-2.2.py` finds lead SNP associations by trait/chromosome using a significance threshold and a configurable genomic window.
+`peak_finder_batch.py` finds lead SNP associations by trait/chromosome using a significance threshold and a configurable genomic window.
 
 Companion tool to the legacy `gwasAssociationFilter` peak-finder in `EBISPOT/gwas-utils`.
 
@@ -32,11 +32,11 @@ The script adds `isTopAssociation` with:
 ## Run
 
 ```bash
-python peak_finder-2.2.py -f input.tsv -o output.tsv
+python peak_finder_batch.py -f input.tsv -o output.tsv
 ```
 
 Optional:
 
 ```bash
-python peak_finder-2.2.py -f input.tsv -o output.tsv -w 100000 -t 1e-5 -p
+python peak_finder_batch.py -f input.tsv -o output.tsv -w 100000 -t 1e-5 -p
 ```

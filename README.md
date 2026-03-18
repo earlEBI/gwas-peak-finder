@@ -23,7 +23,7 @@ This repository contains a companion peak-finder based on EBISPOT `gwasAssociati
 
 ## What the script does
 
-`peak_finder-2.2.py` processes GWAS association tables and marks lead variants per trait/chromosome in a configurable genomic window.
+`peak_finder_batch.py` processes GWAS association tables and marks lead variants per trait/chromosome in a configurable genomic window.
 
 Required columns:
 
@@ -38,7 +38,7 @@ It outputs the same table with an added `isTopAssociation` column.
 ## Quick start
 
 ```bash
-python peak_finder-2.2.py -f input.tsv -o output.tsv
+python peak_finder_batch.py -f input.tsv -o output.tsv
 ```
 
 Optional arguments:
@@ -46,6 +46,14 @@ Optional arguments:
 - `-w/--window` (default: `100000`)
 - `-t/--threshold` (default: `1e-5`)
 - `-p/--prune` (drop sub-threshold rows before peak calling)
+
+## Regression Check
+
+Run the bundled fixture check:
+
+```bash
+python tests/check_test_input.py
+```
 
 ## GitHub Pages
 
