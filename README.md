@@ -5,6 +5,14 @@ This repository packages `peak_finder-2.2.py` for release in two versions:
 - `v1.0.0`: original script as provided
 - `v1.1.0`: reviewed patch with compatibility and logic fixes
 
+## v1.1.0 patch highlights
+
+- Fixes pandas compatibility by avoiding float writes into string-typed columns.
+- Fixes `--prune` so significance filtering runs correctly.
+- Restricts equal p-value tie handling to variants within the current window.
+- Handles invalid/blank p-values safely and treats `p=0` as most significant.
+- Adds threshold argument validation (`0 < threshold < 1`).
+
 ## What the script does
 
 `peak_finder-2.2.py` processes GWAS association tables and marks lead variants per trait/chromosome in a configurable genomic window.

@@ -11,14 +11,24 @@ pd.options.mode.chained_assignment = None
 
 # Function to calculate -log10(x) without handling x as a float:
 def get_log(pv):
-    if 'E' in pv.upper():
-        mantissa, exponent = pv.upper().split('E')
-        if float(mantissa) == 0:
-            return(0)
-        else:
-            return(math.log10(float(mantissa))+float(exponent))
-    else:
-        return(math.log10(float(pv)))
+    try:
+        pv_str = str(pv).strip()
+        if not pv_str:
+            return float('nan')
+
+        if 'E' in pv_str.upper():
+            mantissa, exponent = pv_str.upper().split('E', 1)
+            mantissa_float = float(mantissa)
+            if mantissa_float == 0:
+                return float('-inf')
+            return math.log10(mantissa_float) + float(exponent)
+
+        pv_float = float(pv_str)
+        if pv_float == 0:
+            return float('-inf')
+        return math.log10(pv_float)
+    except (TypeError, ValueError):
+        return float('nan')
 
 # Function to find and annotate top association:
 def find_top_association(trait, chrom):
@@ -26,13 +36,16 @@ def find_top_association(trait, chrom):
     global window
     global threshold
 
-    test_df = input_df.loc[(input_df['trait'] == trait) & (input_df['chromosome'] == chrom)]
+    test_df = input_df.loc[(input_df['trait'] == trait) & (input_df['chromosome'] == chrom)].copy()
+    if test_df.empty:
+        return
+
     # test_df.loc[:,'pvalue'] = test_df['pvalue'].astype(float) # changing type of p-value column <- too dangerous. Underflow hazard.
-    test_df['mLogPv'] = test_df.pvalue.apply(get_log)
-    test_df.loc[:,'bp_location'] = test_df['bp_location'].astype(float) # changing type of position column
+    test_df['mLogPv'] = test_df['pvalue'].apply(get_log)
+    test_df['bp_location_num'] = pd.to_numeric(test_df['bp_location'], errors='coerce')
 
     # sorting rows by p-value:
-    for index in test_df.sort_values(['mLogPv']).index:
+    for index in test_df.sort_values(['mLogPv'], na_position='last').index:
         
         # Check if the index has 'false' or 'review' flag:
         if test_df.loc[index]['isTopAssociation'] == 'false' or \
@@ -40,30 +53,32 @@ def find_top_association(trait, chrom):
             continue
 
         # Excluding sub significant variants.
-        elif test_df.loc[index]['mLogPv'] > threshold:
+        elif pd.isna(test_df.loc[index]['mLogPv']) or test_df.loc[index]['mLogPv'] > threshold:
             test_df.loc[index, 'isTopAssociation'] = 'false'
             continue
 
         # We have found a top snp!
         else:
-            pos = test_df.loc[index]['bp_location']
+            pos = test_df.loc[index]['bp_location_num']
+            if pd.isna(pos):
+                test_df.loc[index, 'isTopAssociation'] = 'false'
+                continue
+
+            in_window = abs(test_df['bp_location_num'] - pos) <= window
             # Setting false flag for ALL variants within the window.
-            test_df.loc[test_df[abs( test_df.bp_location - pos ) <= window].index,'isTopAssociation'] = 'false'
+            test_df.loc[in_window, 'isTopAssociation'] = 'false'
             
             # If there are multiple variants with the same p-value, request review, othervise it's a true peak.
-            if len(test_df.loc[test_df['mLogPv'] == test_df.loc[index, 'mLogPv']]) > 1:
-                test_df.loc[ test_df['mLogPv'] == test_df.loc[index]['mLogPv'], 'isTopAssociation'] = 'AUTO-REVIEWED-FALSE'
-                
-                pos = test_df.loc[index, 'bp_location']
-                similar = test_df[(test_df['mLogPv'] == test_df.loc[index, 'mLogPv']) 
-                                & (test_df['isTopAssociation'] == 'AUTO-REVIEWED-FALSE')
-                                & (abs(test_df['bp_location'] - pos) <= window)]
+            same_pvalue_in_window = in_window & (test_df['mLogPv'] == test_df.loc[index, 'mLogPv'])
+            if same_pvalue_in_window.sum() > 1:
+                test_df.loc[same_pvalue_in_window, 'isTopAssociation'] = 'AUTO-REVIEWED-FALSE'
+                similar = test_df.loc[same_pvalue_in_window]
                 
                 # Sort similar entries by bp location
-                similar = similar.sort_values(['bp_location'], ascending=True)
+                similar = similar.sort_values(['bp_location_num'], ascending=True)
                 
                 num_snps = len(similar)
-                middle_index = (num_snps - 1) // 2 if num_snps % 2 == 0 else num_snps // 2
+                middle_index = (num_snps - 1) // 2
                 actual_middle_index = similar.iloc[middle_index].name
                 similar.loc[actual_middle_index, 'isTopAssociation'] = 'true'  # Set the middle or first middle to true
                 test_df.update(similar)
@@ -79,7 +94,6 @@ def find_top_association(trait, chrom):
 if __name__ == '__main__':
 
     # Parsing commandline arguments
-    parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(description='This script finds the most significant association within a defined range (100kbp by default).')
 
     parser.add_argument('-f', '--input', help='Input file name with table of associations.')
@@ -93,6 +107,8 @@ if __name__ == '__main__':
     # inputFile = args.input
     outputFile = args.output
     window = args.window
+    if args.threshold <= 0 or args.threshold >= 1:
+        raise ValueError("[Error] --threshold must be between 0 and 1 (exclusive).")
     threshold = math.log10(args.threshold)
     prune = args.prune
 
@@ -119,7 +135,9 @@ if __name__ == '__main__':
         raise Exception('[Error] Not all required columns were found in the file header. Required columns: "trait", "rs_id", "pvalue", "chromosome", "bp_location"')
 
     if prune:
-        input_df = input_df[ input_df.mLogPv < threshold ]
+        input_df['_mLogPv'] = input_df['pvalue'].apply(get_log)
+        input_df = input_df[input_df['_mLogPv'] <= threshold].copy()
+        input_df.drop(columns=['_mLogPv'], inplace=True)
 
     input_df['isTopAssociation'] = ''
 
