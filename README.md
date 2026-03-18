@@ -1,6 +1,6 @@
 # GWAS Peak Finder Batch
 
-This repository contains a companion peak-finder based on EBISPOT `gwasAssociationFilter`, optimized for multi-trait batch processing and optional automatic tie resolution.
+This repository contains a companion peak-finder based on EBISPOT `gwasAssociationFilter`, optimized for multi-trait batch processing and automatic tie resolution (default).
 
 ## Release lines
 

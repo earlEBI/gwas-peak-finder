@@ -9,6 +9,8 @@ title: GWAS Peak Finder Batch
 
 Companion tool to the legacy `gwasAssociationFilter` peak-finder in `EBISPOT/gwas-utils`.
 
+Automatic tie resolution is enabled by default in this workflow.
+
 ## Inputs
 
 Provide a tab-separated file containing:
@@ -25,7 +27,7 @@ The script adds `isTopAssociation` with:
 
 - `true` for selected lead variants
 - `false` for non-leads or sub-threshold variants
-- `AUTO-REVIEWED-FALSE` for tied candidates needing manual review
+- `AUTO-REVIEWED-FALSE` for tied candidates; one in-window representative is automatically set to `true`
 
 ## Run
 
