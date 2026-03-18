@@ -4,3 +4,4 @@ __pycache__/
 *.tsv
 *.csv
 .venv/
+!tests/fixtures/*.tsv

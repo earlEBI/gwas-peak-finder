@@ -1,0 +1,9 @@
+trait	chromosome	bp_location	rs_id	pvalue	isTopAssociation
+T1	1	100000	rsA	1e-8	AUTO-REVIEWED-FALSE
+T1	1	130000	rsB	1e-8	true
+T1	1	170000	rsC	1e-8	AUTO-REVIEWED-FALSE
+T1	1	400000	rsD	1e-7	true
+T1	1	1200000	rsE	1e-4	false
+T2	2	200000	rsF	5e-9	true
+T2	2	250000	rsG	5e-9	AUTO-REVIEWED-FALSE
+T2	2	260000	rsH	1e-6	false
